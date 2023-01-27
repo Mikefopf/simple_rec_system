@@ -12,7 +12,7 @@ def make_coo_row(items: List[int], n_items: int) -> np.array:
     values = [1.0 for _ in items]
     return sp.coo_matrix(
         (np.array(values).astype(np.float32),
-        ([0] * len(value), value)), shape=(1, n_items + 1),
+        ([0] * len(items), items)), shape=(1, n_items + 1),
     )
 
 def create_sparse_matrix(
