@@ -1,4 +1,7 @@
-def average_precision(actual, recommended, k=30):
+"""Metrics to calculate"""
+
+def average_precision(actual: list, recommended: list, k=30) -> float:
+    """Average precision for one user"""
     ap_sum = 0
     hits = 0
     for i in range(k):
@@ -9,11 +12,13 @@ def average_precision(actual, recommended, k=30):
     return ap_sum / k
 
 
-def normalized_average_precision(actual, recommended, k=30):
+
+def normalized_average_precision(actual: list, recommended: list, k=30) -> float:
+    """Average precision for all users"""
     actual = set(actual)
     if len(actual) == 0:
         return 0.0
 
-    ap = average_precision(actual, recommended, k=k)
-    ap_ideal = average_precision(actual, list(actual)[:k], k=k)
-    return ap / ap_ideal
+    aver_prec = average_precision(actual, recommended, k=k)
+    aver_prec_ideal = average_precision(actual, list(actual)[:k], k=k)
+    return aver_prec / aver_prec_ideal
