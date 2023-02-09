@@ -64,6 +64,10 @@ class PipelineReqSystem:
         Return:
             Aggregated train, val, test data.
         """
+        if self.learn_data.shape[0] == 0:
+            raise ValueError('Data is empty')
+        elif self.learn_data.shape[0] < 1000:
+            raise ValueError('Data is too small')        
         random_df = self.learn_data.sample(frac=1, random_state=42)
         train, validate, test = (random_df[0:int(0.6 * self.learn_data.shape[0])],
                                  random_df[int(0.6 * self.learn_data.shape[0]):
