@@ -9,6 +9,10 @@ import numpy as np
 
 from metrics import normalized_average_precision
 
+INTERACTIONS_DF = pd.read_csv('../interactions.csv')
+USERS_NUM = max(INTERACTIONS_DF['row'])
+ITEMS_NUM = max(INTERACTIONS_DF['col'])
+
 def grid_parameters(parameters: Dict[str, Iterable[Any]]) -> Iterable[Dict[str, Any]]:
     """
     Get grid parameters using functools.
@@ -140,10 +144,10 @@ def grid_search_recommend(
     """
     best_score = -1.0
     for settings in grid_parameters(grid_hyperparams):
-        X_sparse = create_sparse_matrix(30910, 18494, train)
+        X_sparse = create_sparse_matrix(USERS_NUM + 1, ITEMS_NUM + 1, train)
         model_params = model(**settings)
         model_params.fit(X_sparse)
-        score = get_score_model(val, train, model_params, 18494)
+        score = get_score_model(val, train, model_params, ITEMS_NUM + 1)
         if score > best_score:
             best_score = score
             best_params = settings

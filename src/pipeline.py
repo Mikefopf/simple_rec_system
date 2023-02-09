@@ -4,12 +4,15 @@ Class for all pipeline of model learning.
 """
 
 from typing import List, Tuple, Dict
+import logging
 
 import pandas as pd
 import numpy as np
 import implicit
 
 import utils
+
+logging.basicConfig(filename='req_sys.log', filemode='w', level=logging.DEBUG)
 
 class PipelineReqSystem:
     """
@@ -64,6 +67,7 @@ class PipelineReqSystem:
         Return:
             Aggregated train, val, test data.
         """
+        logging.debug('Prepare data')
         if self.learn_data.shape[0] == 0:
             raise ValueError('Data is empty')
         elif self.learn_data.shape[0] < 1000:
@@ -84,6 +88,7 @@ class PipelineReqSystem:
         Return:
             Score for baseline.
         """
+        logging.debug('Calculate baseline score')
         tops = self.learn_data.groupby('col').count().sort_values('data', ascending=False)
         top_items = list(np.array(tops.index)[:30])
         return utils.get_score_top(self.test, top_items)
@@ -100,15 +105,17 @@ class PipelineReqSystem:
         Return:
             Best params for als and cosine.
         """
-        factors_grid = [16, 32, 64]
+        factors_grid = [32, 64]
         regularization_grid = [0, 0.2]
-        iterations_grid = [4, 8, 16]
+        iterations_grid = [8, 16]
         params_als = {'factors': factors_grid,
                       'regularization': regularization_grid,
                       'iterations': iterations_grid}
         params_cosine = {'K': [1, 3, 5, 10, 20, 50, 100, 200]}
+        logging.debug('Grid search als')
         als_best_params = utils.grid_search_recommend(
             implicit.als.AlternatingLeastSquares, params_als, self.train, self.val)
+        logging.debug('Grid search cosine')
         cosine_best_params = utils.grid_search_recommend(
             implicit.nearest_neighbours.CosineRecommender, params_cosine, self.train, self.val)
         return als_best_params, cosine_best_params
@@ -120,9 +127,10 @@ class PipelineReqSystem:
         Return:
             Best params for als and cosine.
         """
+        logging.debug('Train best checkpoints')
         model_als = implicit.als.AlternatingLeastSquares(**self.hyperparams_als)
         model_cosine = implicit.nearest_neighbours.CosineRecommender(**self.hyperparams_cosine)
-        x_sparse = utils.create_sparse_matrix(30910, 18494, self.train)
+        x_sparse = utils.create_sparse_matrix(utils.USERS_NUM + 1, utils.ITEMS_NUM + 1, self.train)
         model_als.fit(x_sparse)
         model_cosine.fit(x_sparse)
         return model_als, model_cosine
@@ -138,8 +146,9 @@ class PipelineReqSystem:
         Return:
             Best score.
         """
-        score_als = utils.get_score_model(self.test, self.train, self.model_als, 18494)
-        score_cosine = utils.get_score_model(self.test, self.train, self.model_cosine, 18494)
+        logging.debug('Compare models with baseline')
+        score_als = utils.get_score_model(self.test, self.train, self.model_als, utils.ITEMS_NUM + 1)
+        score_cosine = utils.get_score_model(self.test, self.train, self.model_cosine, utils.ITEMS_NUM + 1)
         if self.get_score_baseline() > max(score_als, score_cosine):
             raise RuntimeError('ML models are worse than baseline')
         return max(score_als, score_cosine)
@@ -155,7 +164,7 @@ class PipelineReqSystem:
         """
         res = []
         for key in inference_data:
-            row_sparse = utils.make_coo_row(self.train.get(key, []), 18494).tocsr()
+            row_sparse = utils.make_coo_row(self.train.get(key, []), utils.ITEMS_NUM + 1).tocsr()
             recommended_items = self.model_cosine.recommend(
                 int(key - 1), row_sparse, N=30, filter_already_liked_items=True,
                 recalculate_user=False,
@@ -163,6 +172,11 @@ class PipelineReqSystem:
             res.append(recommended_items)
         return res
 
-interactions_df = pd.read_csv('../interactions.csv')
-pipeline = PipelineReqSystem(interactions_df)
-print(pipeline.score_baseline, pipeline.max_score)
+def main():
+    interactions_df = pd.read_csv('../interactions.csv')
+    print(max(interactions_df['row']))
+    #pipeline = PipelineReqSystem(interactions_df)
+    #print(pipeline.score_baseline, pipeline.max_score)
+
+if __name__ == '__main__':
+    main()
