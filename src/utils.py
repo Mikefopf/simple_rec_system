@@ -5,7 +5,6 @@ from typing import List, Dict, Iterable, Any
 from itertools import product
 
 from scipy import sparse as sp
-from tqdm import tqdm
 import numpy as np
 
 from metrics import normalized_average_precision
@@ -85,7 +84,9 @@ def aggregate_users(rows: list) -> Dict[int, List[int]]:
     aggregated_data = {}
     for row in rows:
         user, item = row[0], row[1]
-        aggregated_data.update({user: item})
+        current_items = aggregated_data.get(user, [])
+        current_items.append(item)
+        aggregated_data[user] = current_items
     return aggregated_data
 
 def get_score_model(
@@ -99,7 +100,7 @@ def get_score_model(
         Mean score for users.
     """
     scores = []
-    for key, value in tqdm(aggregated_items_test.items()):
+    for key, value in aggregated_items_test.items():
         row_sparse = make_coo_row(aggregated_items_train.get(key, []), n_items).tocsr()
         recommended_items = model.recommend(
             int(key - 1), row_sparse, N=30, filter_already_liked_items=True, recalculate_user=False
