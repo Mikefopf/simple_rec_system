@@ -3,6 +3,7 @@ Some necessary functions to educate models
 """
 from typing import List, Dict, Iterable, Any
 from itertools import product
+import pandas as pd
 
 from scipy import sparse as sp
 import numpy as np

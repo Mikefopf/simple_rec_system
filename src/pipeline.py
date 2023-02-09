@@ -174,9 +174,8 @@ class PipelineReqSystem:
 
 def main():
     interactions_df = pd.read_csv('../interactions.csv')
-    print(max(interactions_df['row']))
-    #pipeline = PipelineReqSystem(interactions_df)
-    #print(pipeline.score_baseline, pipeline.max_score)
+    pipeline = PipelineReqSystem(interactions_df)
+    print(pipeline.best_score)
 
 if __name__ == '__main__':
     main()
