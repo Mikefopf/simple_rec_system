@@ -7,4 +7,5 @@
 Запуск 
 
 cd src
+
 python3 pipeline.py
